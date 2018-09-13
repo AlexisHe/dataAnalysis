@@ -1,0 +1,41 @@
+
+drop procedure if exists wk; 
+delimiter $$
+create procedure wk(in tb varchar(60), in myjson json)
+begin
+declare len int;
+declare i int;
+declare mykey varchar(60);
+declare myvalue varchar(60);
+declare thekeys varchar(60);
+declare mysql_1 varchar(60);
+declare mysql_2 varchar(60);
+
+
+SET LEN= (select JSON_LENGTH(myjson));
+set i=1;
+set mykey='initial';
+
+set myvalue='initial';
+
+set thekeys= (select JSON_keys(myjson));
+
+set mysql_1=concat("insert into ",tb," (");
+
+set mysql_2='(';
+
+while i < len*2 do
+set mykey = (select substring(substring_index(thekeys,'"',i+1),length(substring_index(thekeys,'"',i))+2));
+set myvalue = (select json_extract(myjson,concat('$.',mykey)));
+set mysql_1= concat(mysql_1, mykey,","); 
+set mysql_2= concat(mysql_2, myvalue,",") ;
+set i =i+2;
+end while;
+select mysql_1;
+set @mysql = concat(substring(mysql_1,1,length(mysql_1)-1),") values ",substring(mysql_2,1,length(mysql_2)-1), ")");
+select @mysql;
+PREPARE stmt FROM @mysql;  
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+end $$
+delimiter ;
